@@ -177,6 +177,14 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
         updateKeyboardGrabState();
         break;
 
+    case KeyComboToggleMicrophoneMute:
+        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
+                    "Detected microphone mute toggle combo");
+        if (auto session = Session::get(); session != nullptr) {
+            session->toggleMicrophoneMute();
+        }
+        break;
+
     default:
         Q_UNREACHABLE();
     }

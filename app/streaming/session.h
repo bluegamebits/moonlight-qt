@@ -9,6 +9,7 @@
 #include "input/input.h"
 #include "video/decoder.h"
 #include "audio/renderers/renderer.h"
+#include "audio/microphone.h"
 #include "video/overlaymanager.h"
 
 class SupportedVideoFormatList : public QList<int>
@@ -124,6 +125,9 @@ public:
     void flushWindowEvents();
 
     void setShouldExit(bool quitHostApp = false);
+
+    // Toggles microphone mute if microphone passthrough is active
+    void toggleMicrophoneMute();
 
 signals:
     void stageStarting(QString stage);
@@ -278,6 +282,10 @@ private:
     OPUS_MULTISTREAM_CONFIGURATION m_OriginalAudioConfig;
     int m_AudioSampleCount;
     Uint32 m_DropAudioEndTime;
+
+    MicrophoneStreamer* m_Microphone;
+
+    void updateMicrophoneOverlay();
 
     Overlay::OverlayManager m_OverlayManager;
 

@@ -584,7 +584,8 @@ Session::Session(NvComputer* computer, NvApp& app, StreamingPreferences *prefere
       m_OpusDecoder(nullptr),
       m_AudioRenderer(nullptr),
       m_AudioSampleCount(0),
-      m_DropAudioEndTime(0)
+      m_DropAudioEndTime(0),
+      m_Microphone(nullptr)
 {
 }
 
@@ -703,6 +704,9 @@ bool Session::initialize(QQuickWindow* qtWindow)
 
     // Only the first 4 bytes are populated in the RI key IV
     RAND_bytes(reinterpret_cast<unsigned char*>(m_StreamConfig.remoteInputAesIv), 4);
+
+    // Ask the host to set up a virtual microphone for us if supported
+    m_StreamConfig.enableMicrophone = m_Preferences->enableMicrophone;
 
     switch (m_Preferences->audioConfig)
     {
@@ -1572,6 +1576,9 @@ void Session::notifyMouseEmulationMode(bool enabled)
     }
     else {
         m_OverlayManager.setOverlayState(Overlay::OverlayStatusUpdate, false);
+
+        // Restore the muted microphone indicator if needed
+        updateMicrophoneOverlay();
     }
 }
 
@@ -1761,6 +1768,35 @@ void Session::setShouldExit(bool quitHostApp)
     }
 
     m_ShouldExit = true;
+}
+
+void Session::toggleMicrophoneMute()
+{
+    if (m_Microphone == nullptr) {
+        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
+                    "Microphone passthrough is not active for this session");
+        return;
+    }
+
+    m_Microphone->setMuted(!m_Microphone->isMuted());
+    updateMicrophoneOverlay();
+}
+
+void Session::updateMicrophoneOverlay()
+{
+    // Don't fight with gamepad mouse emulation, which also uses the status overlay
+    if (m_Microphone == nullptr || m_MouseEmulationRefCount > 0) {
+        return;
+    }
+
+    // Keep a persistent indicator on screen while the microphone is muted
+    if (m_Microphone->isMuted()) {
+        m_OverlayManager.updateOverlayText(Overlay::OverlayStatusUpdate, "Microphone muted");
+        m_OverlayManager.setOverlayState(Overlay::OverlayStatusUpdate, true);
+    }
+    else {
+        m_OverlayManager.setOverlayState(Overlay::OverlayStatusUpdate, false);
+    }
 }
 
 void Session::start()
@@ -1973,6 +2009,18 @@ void Session::exec()
 
     // Toggle the stats overlay if requested by the user
     m_OverlayManager.setOverlayState(Overlay::OverlayDebug, m_Preferences->showPerformanceOverlay);
+
+    // Start streaming the microphone if the host accepted it
+    if (m_Preferences->enableMicrophone && LiIsMicrophoneStreamActive()) {
+        m_Microphone = new MicrophoneStreamer();
+        if (m_Microphone->start(m_Preferences->microphoneDevice, m_Preferences->startMicrophoneMuted)) {
+            updateMicrophoneOverlay();
+        }
+        else {
+            delete m_Microphone;
+            m_Microphone = nullptr;
+        }
+    }
 
     // Switch to async logging mode when we enter the SDL loop
     StreamUtils::enterAsyncLoggingMode();
@@ -2325,6 +2373,10 @@ void Session::exec()
     }
 
 DispatchDeferredCleanup:
+    // Stop the microphone before LiStopConnection() tears down the audio socket
+    delete m_Microphone;
+    m_Microphone = nullptr;
+
     // Switch back to synchronous logging mode
     StreamUtils::exitAsyncLoggingMode();
 

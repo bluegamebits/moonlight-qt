@@ -965,6 +965,37 @@ Flickable {
                     ToolTip.visible: hovered
                     ToolTip.text: qsTr("Mutes Moonlight's audio when you Alt+Tab out of the stream or click on a different window.")
                 }
+
+                CheckBox {
+                    id: enableMicrophoneCheck
+                    width: parent.width
+                    text: qsTr("Stream microphone to host PC")
+                    font.pointSize: 12
+                    checked: StreamingPreferences.enableMicrophone
+                    onCheckedChanged: {
+                        StreamingPreferences.enableMicrophone = checked
+                    }
+
+                    ToolTip.delay: 1000
+                    ToolTip.timeout: 8000
+                    ToolTip.visible: hovered
+                    ToolTip.text: qsTr("Sends your microphone to the host, where it appears as a microphone device. " +
+                                       "Requires a host with microphone passthrough support. " +
+                                       "Press Ctrl+Alt+Shift+N during the stream to mute or unmute it. " +
+                                       "Use headphones to avoid echo.")
+                }
+
+                CheckBox {
+                    id: startMicrophoneMutedCheck
+                    width: parent.width
+                    text: qsTr("Start streams with the microphone muted")
+                    font.pointSize: 12
+                    enabled: StreamingPreferences.enableMicrophone
+                    checked: StreamingPreferences.startMicrophoneMuted
+                    onCheckedChanged: {
+                        StreamingPreferences.startMicrophoneMuted = checked
+                    }
+                }
             }
         }
 
