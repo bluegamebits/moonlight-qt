@@ -3,7 +3,8 @@ SUBDIRS = \
     moonlight-common-c \
     qmdnsengine \
     app \
-    h264bitstream \n    speexdsp
+    h264bitstream \
+    speexdsp
 
 # Build the dependencies in parallel before the final app
 app.depends = qmdnsengine moonlight-common-c h264bitstream speexdsp
