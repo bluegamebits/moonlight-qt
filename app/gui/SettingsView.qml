@@ -981,8 +981,7 @@ Flickable {
                     ToolTip.visible: hovered
                     ToolTip.text: qsTr("Sends your microphone to the host, where it appears as a microphone device. " +
                                        "Requires a host with microphone passthrough support. " +
-                                       "Press Ctrl+Alt+Shift+N during the stream to mute or unmute it. " +
-                                       "Use headphones to avoid echo.")
+                                       "Press Ctrl+Alt+Shift+N during the stream to mute or unmute it.")
                 }
 
                 CheckBox {
@@ -995,6 +994,25 @@ Flickable {
                     onCheckedChanged: {
                         StreamingPreferences.startMicrophoneMuted = checked
                     }
+                }
+
+                CheckBox {
+                    id: microphoneEchoCancellationCheck
+                    width: parent.width
+                    text: qsTr("Cancel echo from the stream's audio")
+                    font.pointSize: 12
+                    enabled: StreamingPreferences.enableMicrophone
+                    checked: StreamingPreferences.microphoneEchoCancellation
+                    onCheckedChanged: {
+                        StreamingPreferences.microphoneEchoCancellation = checked
+                    }
+
+                    ToolTip.delay: 1000
+                    ToolTip.timeout: 8000
+                    ToolTip.visible: hovered
+                    ToolTip.text: qsTr("Removes the game and voice chat audio that your microphone picks up from your speakers, " +
+                                       "so people on the host don't hear an echo. Also reduces background noise. " +
+                                       "You can turn this off when using headphones.")
                 }
             }
         }

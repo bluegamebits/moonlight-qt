@@ -193,6 +193,7 @@ SOURCES += \
     streaming/input/reltouch.cpp \
     streaming/session.cpp \
     streaming/audio/audio.cpp \
+    streaming/audio/echocanceller.cpp \
     streaming/audio/microphone.cpp \
     streaming/audio/renderers/sdlaud.cpp \
     gui/computermodel.cpp \
@@ -230,6 +231,7 @@ HEADERS += \
     settings/streamingpreferences.h \
     streaming/input/input.h \
     streaming/session.h \
+    streaming/audio/echocanceller.h \
     streaming/audio/microphone.h \
     streaming/audio/renderers/renderer.h \
     streaming/audio/renderers/sdl.h \
@@ -513,6 +515,13 @@ else:unix: LIBS += -L$$OUT_PWD/../h264bitstream/ -lh264bitstream
 
 INCLUDEPATH += $$PWD/../h264bitstream
 DEPENDPATH += $$PWD/../h264bitstream
+
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../speexdsp/release/ -lspeexdsp
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../speexdsp/debug/ -lspeexdsp
+else:unix: LIBS += -L$$OUT_PWD/../speexdsp/ -lspeexdsp
+
+INCLUDEPATH += $$PWD/../speexdsp/include
+DEPENDPATH += $$PWD/../speexdsp/include
 
 !winrt {
     win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../AntiHooking/release/ -lAntiHooking

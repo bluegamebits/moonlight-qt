@@ -8,6 +8,7 @@
 #include <cstdint>
 
 struct OpusEncoder;
+class EchoCanceller;
 
 // Captures the local microphone, encodes it with Opus and sends it to the
 // host using LiSendMicrophoneOpusData(). Requires a host that negotiated
@@ -18,8 +19,9 @@ public:
     MicrophoneStreamer();
     ~MicrophoneStreamer();
 
-    // Opens the named capture device (or the system default if empty) and starts streaming
-    bool start(const QString& deviceName, bool startMuted);
+    // Opens the named capture device (or the system default if empty) and starts streaming.
+    // With echo cancellation, the stream's own audio is removed from the microphone.
+    bool start(const QString& deviceName, bool startMuted, bool echoCancellation);
     void stop();
 
     void setMuted(bool muted);
@@ -36,6 +38,7 @@ private:
 
     SDL_AudioDeviceID m_Device;
     OpusEncoder* m_Encoder;
+    EchoCanceller* m_EchoCanceller;
     bool m_AudioSubsystemInitialized;
     std::atomic<bool> m_Muted;
     std::atomic<bool> m_WasMuted;

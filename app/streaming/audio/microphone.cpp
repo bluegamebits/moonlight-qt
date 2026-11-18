@@ -1,4 +1,5 @@
 #include "microphone.h"
+#include "echocanceller.h"
 
 #include <Limelight.h>
 #include <opus.h>
@@ -8,6 +9,7 @@
 MicrophoneStreamer::MicrophoneStreamer()
     : m_Device(0),
       m_Encoder(nullptr),
+      m_EchoCanceller(nullptr),
       m_AudioSubsystemInitialized(false),
       m_Muted(false),
       m_WasMuted(false),
@@ -21,7 +23,7 @@ MicrophoneStreamer::~MicrophoneStreamer()
     stop();
 }
 
-bool MicrophoneStreamer::start(const QString& deviceName, bool startMuted)
+bool MicrophoneStreamer::start(const QString& deviceName, bool startMuted, bool echoCancellation)
 {
     int err;
 
@@ -49,6 +51,15 @@ bool MicrophoneStreamer::start(const QString& deviceName, bool startMuted)
     opus_encoder_ctl(m_Encoder, OPUS_SET_PACKET_LOSS_PERC(10));
     opus_encoder_ctl(m_Encoder, OPUS_SET_DTX(1));
     opus_encoder_ctl(m_Encoder, OPUS_SET_COMPLEXITY(5));
+
+    if (echoCancellation) {
+        // The canceller is optional. If it fails, stream the microphone without it.
+        m_EchoCanceller = new EchoCanceller();
+        if (!m_EchoCanceller->init()) {
+            delete m_EchoCanceller;
+            m_EchoCanceller = nullptr;
+        }
+    }
 
     if (SDL_InitSubSystem(SDL_INIT_AUDIO) != 0) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
@@ -117,6 +128,10 @@ void MicrophoneStreamer::stop()
         m_AudioSubsystemInitialized = false;
     }
 
+    // Safe now that the capture callback can no longer run
+    delete m_EchoCanceller;
+    m_EchoCanceller = nullptr;
+
     if (m_Encoder != nullptr) {
         opus_encoder_destroy(m_Encoder);
         m_Encoder = nullptr;
@@ -175,6 +190,14 @@ void MicrophoneStreamer::processSamples(const int16_t* samples, int count)
             break;
         }
         m_FrameFill = 0;
+
+        if (m_EchoCanceller != nullptr) {
+            static_assert(k_FrameSamples % EchoCanceller::k_FrameSamples == 0,
+                          "Opus frames must hold a whole number of echo canceller frames");
+            for (int i = 0; i < k_FrameSamples; i += EchoCanceller::k_FrameSamples) {
+                m_EchoCanceller->process(&m_Frame[i]);
+            }
+        }
 
         int len = opus_encode(m_Encoder, m_Frame, k_FrameSamples, m_Packet, sizeof(m_Packet));
         if (len < 0) {

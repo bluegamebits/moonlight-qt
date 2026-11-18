@@ -1,10 +1,12 @@
 #include "sdl.h"
+#include "../echocanceller.h"
 
 #include <Limelight.h>
 
 SdlAudioRenderer::SdlAudioRenderer()
     : m_AudioDevice(0),
-      m_AudioBuffer(nullptr)
+      m_AudioBuffer(nullptr),
+      m_Channels(0)
 {
     SDL_assert(!SDL_WasInit(SDL_INIT_AUDIO));
 
@@ -32,6 +34,7 @@ bool SdlAudioRenderer::prepareForPlayback(const OPUS_MULTISTREAM_CONFIGURATION* 
     // The buffering helps avoid audio underruns due to network jitter.
     want.samples = SDL_max(480, opusConfig->samplesPerFrame * 3);
 
+    m_Channels = opusConfig->channelCount;
     m_FrameDurationMs = opusConfig->samplesPerFrame / (opusConfig->sampleRate / 1000);
     m_FrameSize = opusConfig->samplesPerFrame *
                   opusConfig->channelCount *
@@ -123,6 +126,11 @@ bool SdlAudioRenderer::submitAudio(int bytesWritten)
 
         SDL_Delay(1);
     }
+
+    // Let the microphone's echo canceller know exactly what we're about to play
+    EchoCanceller::submitPlayback((const float*)m_AudioBuffer,
+                                  bytesWritten / (int)(m_Channels * sizeof(float)),
+                                  m_Channels);
 
     if (SDL_QueueAudio(m_AudioDevice, m_AudioBuffer, bytesWritten) < 0) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,

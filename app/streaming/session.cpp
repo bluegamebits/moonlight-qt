@@ -2013,7 +2013,9 @@ void Session::exec()
     // Start streaming the microphone if the host accepted it
     if (m_Preferences->enableMicrophone && LiIsMicrophoneStreamActive()) {
         m_Microphone = new MicrophoneStreamer();
-        if (m_Microphone->start(m_Preferences->microphoneDevice, m_Preferences->startMicrophoneMuted)) {
+        if (m_Microphone->start(m_Preferences->microphoneDevice,
+                                m_Preferences->startMicrophoneMuted,
+                                m_Preferences->microphoneEchoCancellation)) {
             updateMicrophoneOverlay();
         }
         else {

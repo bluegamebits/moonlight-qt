@@ -362,6 +362,7 @@ void StreamCommandLineParser::parse(const QStringList &args, StreamingPreference
     parser.addToggleOption("frame-pacing", "frame pacing");
     parser.addToggleOption("mute-on-focus-loss", "mute audio when Moonlight window loses focus");
     parser.addToggleOption("microphone", "microphone streaming to the host");
+    parser.addToggleOption("echo-cancellation", "microphone echo cancellation");
     parser.addToggleOption("background-gamepad", "background gamepad input");
     parser.addToggleOption("reverse-scroll-direction", "inverted scroll direction");
     parser.addToggleOption("swap-gamepad-buttons", "swap A/B and X/Y gamepad buttons (Nintendo-style)");
@@ -473,6 +474,9 @@ void StreamCommandLineParser::parse(const QStringList &args, StreamingPreference
 
     // Resolve --microphone and --no-microphone options
     preferences->enableMicrophone = parser.getToggleOptionValue("microphone", preferences->enableMicrophone);
+
+    // Resolve --echo-cancellation and --no-echo-cancellation options
+    preferences->microphoneEchoCancellation = parser.getToggleOptionValue("echo-cancellation", preferences->microphoneEchoCancellation);
 
     // Resolve --background-gamepad and --no-background-gamepad options
     preferences->backgroundGamepad = parser.getToggleOptionValue("background-gamepad", preferences->backgroundGamepad);
